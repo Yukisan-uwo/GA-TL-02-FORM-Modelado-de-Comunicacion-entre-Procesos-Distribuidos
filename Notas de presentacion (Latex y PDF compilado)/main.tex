@@ -258,9 +258,65 @@ Se propone la tabla \emph{outbox} para reducir ese riesgo; a cambio, habrá que 
 % INTEGRANTE 2
 % ----------------------------------------------------------
 
-\subsection{Muro y seguidores (integrante 2)}
+\subsection{Muro y seguidores}
 
-\pendiente{explicar interacciones asignadas, RPC con gRPC, distribución de avisos normales y alertas, R3, R4 y F2. Usar fuentes y decisiones verificables.}
+El servicio de Muro construye la línea de tiempo (\textit{timeline}) de cada
+usuario a partir de los avisos publicados por las personas y negocios que este
+sigue. Su comunicación con el resto del sistema se resuelve mediante cinco
+interacciones (I03, I10, I11, I12 e I18), que combinan comunicación síncrona y
+asíncrona según la necesidad de cada operación.
+
+\textbf{I03.} El cliente consulta su \textit{timeline} mediante una petición
+HTTPS con API REST y formato JSON, enviando el identificador del usuario y un
+cursor de paginación. La comunicación es síncrona porque la persona espera ver
+su muro en pantalla. El Muro responde leyendo una proyección ya construida, en
+lugar de calcularla en el momento, y excluye los avisos marcados como ocultos.
+
+\textbf{I10.} El Muro consume desde RabbitMQ los avisos normales, las alertas de
+seguridad y los eventos \texttt{post.hidden}. Se emplea mensajería asíncrona
+mediante AMQP 0-9-1, con colas durables y confirmación manual (\textit{ACK})
+del consumidor. El \textit{ACK} se emite únicamente después de aplicar el
+cambio en la proyección, de modo que, si el servicio falla a mitad del
+procesamiento, el mensaje no se pierde y se reentrega. 
+
+Las rutas normal (\texttt{feed.normal}) y de alertas (\texttt{feed.alert}) se separan para que un lote grande de publicaciones comunes no retrase una alerta de seguridad, lo que responde al requisito R3.
+
+\textbf{I11.} Para distribuir un aviso, el Muro necesita conocer quiénes siguen
+al autor. Esta consulta se resuelve con una llamada a procedimiento remoto
+(RPC) mediante gRPC sobre HTTP/2 y Protocol Buffers, de tipo unario y
+paginado: el Muro envía \texttt{ListFollowers(authorId, pageToken, pageSize)} y
+recibe una página de seguidores junto con el siguiente \texttt{nextToken}. 
+
+La comunicación es síncrona por lote, porque el Muro necesita cada página para
+continuar el procesamiento. La paginación evita enviar en un solo mensaje la
+lista completa de un negocio con 30\,000 seguidores. Se
+descartó REST para esta comunicación entre servicios, ya que gRPC ofrece un
+contrato tipado y un formato binario. La literatura reciente compara de forma
+empírica ambos patrones de comunicación en arquitecturas de microservicios,
+en términos de latencia y rendimiento \cite{vairam2026grpc}; sin embargo, los
+resultados dependen del entorno de prueba y no se extrapolan directamente a
+este diseño.
+
+\textbf{I12.} Cuando la proyección de un aviso está lista, el Muro publica un
+evento \texttt{feed.ready} (con el identificador de la publicación, la
+audiencia y el tipo) en RabbitMQ. Se usa un \textit{outbox} del Muro y
+confirmaciones de publicación (\textit{publisher confirms}), de modo que el
+evento se emita solo después de persistir la proyección. Posteriormente, el
+servicio de Mensajería lo consume para avisar a los clientes conectados.
+
+\textbf{I18.} El Muro almacena en su propia base de datos PostgreSQL la
+proyección del \textit{timeline}, el identificador de cada evento ya procesado
+(\texttt{eventId}) y el estado oculto de los avisos. La comunicación es
+síncrona mediante el protocolo nativo de PostgreSQL sobre TCP. Registrar el
+\texttt{eventId} permite que el procesamiento sea idempotente: si RabbitMQ
+reentrega un evento, el Muro lo reconoce y no lo aplica dos veces.
+
+\textbf{Relación con los requisitos y fallos.} Respecto de R3, la separación de
+colas y la actualización de la proyección antes de emitir \texttt{feed.ready}
+buscan que las alertas lleguen con prioridad. Respecto de R4, la consulta
+paginada por gRPC y el procesamiento por lotes evitan sobrecargar al servicio
+con un solo mensaje de gran tamaño. 
+Respecto de F2 (caída del Muro mientras un negocio publica), las colas durables de RabbitMQ conservan los eventos confirmados y el Muro los retoma al recuperarse, aplicando \textit{ACK} manual solo tras persistir y descartando duplicados por \texttt{eventId}. Cabe aclarar que estas son medidas de diseño: los tiempos de R3 y la capacidad de R4 no se han comprobado y requerirán pruebas de carga durante la implementación.
 
 % ----------------------------------------------------------
 % INTEGRANTE 3
