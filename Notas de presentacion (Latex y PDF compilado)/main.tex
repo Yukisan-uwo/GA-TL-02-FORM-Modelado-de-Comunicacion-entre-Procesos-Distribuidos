@@ -318,13 +318,124 @@ paginada por gRPC y el procesamiento por lotes evitan sobrecargar al servicio
 con un solo mensaje de gran tamaño. 
 Respecto de F2 (caída del Muro mientras un negocio publica), las colas durables de RabbitMQ conservan los eventos confirmados y el Muro los retoma al recuperarse, aplicando \textit{ACK} manual solo tras persistir y descartando duplicados por \texttt{eventId}. Cabe aclarar que estas son medidas de diseño: los tiempos de R3 y la capacidad de R4 no se han comprobado y requerirán pruebas de carga durante la implementación.
 
+\newpage
 % ----------------------------------------------------------
 % INTEGRANTE 3
 % ----------------------------------------------------------
 
-\subsection{Mensajería directa (integrante 3)}
+\subsection{Mensajería directa }
 
-\pendiente{explicar sockets, WebSocket sobre TCP si se mantiene esa elección, orden de mensajes, reconexiones, R2, R6, F1 y F3.}
+El servicio de Mensajería gestiona los chats privados, la presencia de
+los usuarios y la recuperación de conversaciones. En el diagrama se
+comunica con el Cliente, PostgreSQL y RabbitMQ mediante cuatro
+interacciones: I04, I13, I14 e I15.
+
+\paragraph{I04. Comunicación entre Cliente y Mensajería.}
+
+Para los chats se eligió WebSocket seguro (WSS) sobre TLS/TCP, utilizando
+la biblioteca \texttt{ws}. Esta conexión permite enviar y recibir mensajes
+sin abrir una petición HTTP por cada intercambio. También sirve para
+informar cuándo un usuario se conecta o desconecta.
+
+WebSocket se utiliza en aplicaciones de chat en tiempo real y forma parte
+de las tecnologías estudiadas para sistemas web que requieren baja
+latencia y múltiples conexiones simultáneas
+\cite{gangadevi2025chat,diaz2026protocols}.
+
+Cuando el cliente envía un mensaje, el servicio primero debe guardarlo
+en PostgreSQL. Después devuelve un ACK de aplicación para confirmar
+que quedó registrado. Esto no significa que el destinatario ya lo
+recibió o leyó; únicamente confirma el almacenamiento.
+
+\paragraph{I14. Almacenamiento de mensajes en PostgreSQL.}
+
+Mensajería utiliza el protocolo de PostgreSQL sobre TCP para guardar
+y consultar las conversaciones. La comunicación es síncrona porque
+necesita conocer el resultado de la operación antes de confirmar
+el mensaje al cliente.
+
+Cada mensaje tendría un identificador único y un número de secuencia
+dentro de su conversación. Esta secuencia se asignaría de forma atómica
+para evitar que dos mensajes ocupen la misma posición. El identificador
+también permite reconocer reintentos sin guardar el contenido dos veces.
+
+Si el usuario pierde la conexión, puede regresar y enviar
+\texttt{resume(lastSeq)}, indicando el último mensaje que conoce.
+A partir de ese dato, Mensajería consulta PostgreSQL y recupera los
+mensajes que le faltan.
+
+\paragraph{I15. Publicación de mensajes pendientes en RabbitMQ.}
+
+Cuando el destinatario está desconectado, Mensajería conserva el mensaje
+en PostgreSQL y publica el evento \texttt{dm.pending} en RabbitMQ,
+utilizando AMQP 0-9-1 sobre TCP. La comunicación es asíncrona porque
+no necesita esperar a que otro servicio termine de procesar la
+notificación.
+
+Las comparaciones entre sistemas de colas muestran que la latencia
+y la cantidad de mensajes procesados cambian según las condiciones
+de trabajo \cite{maharjan2023queues}. Por eso se utiliza RabbitMQ
+para separar la publicación del evento de su procesamiento posterior,
+sin asumir que siempre ofrecerá el menor tiempo de respuesta.
+
+También hay que considerar qué ocurre si el mensaje se guarda, pero
+Mensajería falla antes de publicar el evento. Para ese caso se plantea
+registrar un evento pendiente en una tabla \textit{outbox}, dentro de
+la misma transacción que almacena el mensaje. Luego, un proceso
+separado puede publicarlo en RabbitMQ. Este mecanismo permite
+coordinar el almacenamiento con el envío de eventos
+\cite{gupta2025outbox}.
+
+Se contemplan confirmaciones de publicación y reintentos. Como un
+evento puede enviarse más de una vez, cada consumidor debe reconocer
+su identificador para evitar procesarlo repetidamente.
+
+\paragraph{I13. Recepción de eventos desde RabbitMQ.}
+
+El servicio de Muro publica \texttt{feed.ready} cuando termina de
+preparar una actualización de la línea de tiempo, como se explicó
+en I12. RabbitMQ entrega ese evento a Mensajería, que puede avisar
+al usuario mediante WebSocket si mantiene una conexión activa.
+
+La recepción utiliza AMQP 0-9-1 y se propone confirmar cada evento
+con un ACK manual después de procesarlo. Si Mensajería falla antes
+de enviar la confirmación, RabbitMQ podría entregar el mismo evento
+nuevamente. Por eso es necesario identificar los eventos ya atendidos.
+
+La gestión de cargas asíncronas también presenta dificultades en
+entornos de microservicios \cite{batista2024async}. En Vecindario,
+reconocer los eventos repetidos ayudaría a evitar que el usuario
+reciba el mismo aviso varias veces.
+
+\paragraph{Requisitos y situaciones de fallo.}
+
+R2 exige que los mensajes directos lleguen en menos de 500 ms y
+mantengan su orden. Para ello se utiliza WebSocket, que mantiene
+la conexión abierta, y PostgreSQL, donde cada mensaje conserva
+su número de secuencia. El tiempo se comprobaría midiendo desde
+que un usuario envía un mensaje hasta que lo recibe el destinatario
+conectado. También habría que revisar el orden de llegada cuando
+se envían varios mensajes seguidos.
+
+R6 establece una disponibilidad del 99,5\,\% para Mensajería.
+Esto significa que el servicio debería permanecer operativo durante
+casi todo el periodo evaluado. PostgreSQL permite conservar las
+conversaciones ante un reinicio y WebSocket admite que los clientes
+vuelvan a conectarse. Sin embargo, estas medidas no evitan todas
+las interrupciones. Para comprobar el requisito se necesitaría
+registrar el tiempo de disponibilidad y evaluar mecanismos de
+recuperación o redundancia.
+
+En F1, si el destinatario está desconectado, el mensaje queda guardado
+y puede recuperarse cuando vuelva a conectarse. En F3, si Mensajería
+se reinicia, los clientes pierden su conexión WebSocket y deben
+restablecerla. Una vez conectados, pueden solicitar los mensajes
+posteriores a su última secuencia registrada.
+
+Una alternativa sería consultar periódicamente por HTTP si existen
+mensajes nuevos. El problema es que se realizarían solicitudes incluso
+cuando no hubiera novedades. Por eso se mantiene WebSocket para
+el chat y RabbitMQ para los eventos entre servicios.
 
 % ----------------------------------------------------------
 % INTEGRANTE 4
