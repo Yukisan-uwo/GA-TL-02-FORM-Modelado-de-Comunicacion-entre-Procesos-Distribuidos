@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net">
   <diagram name="Página-1" id="Agxm0f0GM5XANopHHXMs">
-    <mxGraphModel dx="1414" dy="789" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1022" dy="660" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -16,28 +16,60 @@
             <mxPoint x="31" as="offset" />
           </mxGeometry>
         </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-6" edge="1" parent="1" source="T2pYXhFmpw9Lz7_7Xv7j-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;defaultLabelBackgroundColor=page;labelPadding=0 4;fillColor=#0050ef;strokeColor=light-dark(#001DBC,#66B2FF);startArrow=classic;startFill=1;" target="_oWIY6VmZkqnpJ4aqjik-1">
+          <mxGeometry relative="1" x="0.4059" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="130" />
+              <mxPoint x="200" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-7" connectable="0" parent="_oWIY6VmZkqnpJ4aqjik-6" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="I03 - HTTPS/REST (JSON) - Síncrona" vertex="1">
+          <mxGeometry relative="1" x="0.5176" as="geometry">
+            <mxPoint x="-20" y="12" as="offset" />
+          </mxGeometry>
+        </mxCell>
         <mxCell id="T2pYXhFmpw9Lz7_7Xv7j-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" value="Cliente - App móvil / web" vertex="1">
-          <mxGeometry height="60" width="120" x="80" y="30" as="geometry" />
+          <mxGeometry height="60" width="120" x="230" y="100" as="geometry" />
         </mxCell>
         <mxCell id="T2pYXhFmpw9Lz7_7Xv7j-13" edge="1" parent="1" source="T2pYXhFmpw9Lz7_7Xv7j-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;defaultLabelBackgroundColor=page;exitX=-0.016;exitY=0.908;exitDx=0;exitDy=0;exitPerimeter=0;fillColor=#fa6800;strokeColor=#C73500;flowAnimation=0;dashed=1;dashPattern=8 8;" target="T2pYXhFmpw9Lz7_7Xv7j-5">
           <mxGeometry relative="1" x="-0.0932" as="geometry" />
         </mxCell>
         <mxCell id="T2pYXhFmpw9Lz7_7Xv7j-14" connectable="0" parent="T2pYXhFmpw9Lz7_7Xv7j-13" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;" value="I09 - AMQP / RabbitMQ - Asíncrona" vertex="1">
           <mxGeometry relative="1" x="0.6645" as="geometry">
-            <mxPoint y="-36" as="offset" />
+            <mxPoint y="-22" as="offset" />
           </mxGeometry>
         </mxCell>
         <mxCell id="T2pYXhFmpw9Lz7_7Xv7j-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="Servicio de Publicaciones - Crear, editar y eliminar avisos" vertex="1">
-          <mxGeometry height="60" width="120" x="460" y="30" as="geometry" />
+          <mxGeometry height="60" width="120" x="610" y="100" as="geometry" />
         </mxCell>
         <mxCell id="T2pYXhFmpw9Lz7_7Xv7j-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=light-dark(#E3C800,#FFC600);strokeColor=#B09500;fontColor=light-dark(#000000,#000000);" value="Almacenamiento externo de imágenes" vertex="1">
-          <mxGeometry height="60" width="120" x="80" y="150" as="geometry" />
+          <mxGeometry height="60" width="120" x="230" y="220" as="geometry" />
         </mxCell>
         <mxCell id="T2pYXhFmpw9Lz7_7Xv7j-4" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#647687;fontColor=#ffffff;strokeColor=#314354;" value="BD de avisos y Outbox - PostgreSQL" vertex="1">
-          <mxGeometry height="110" width="70" x="485" y="160" as="geometry" />
+          <mxGeometry height="110" width="70" x="635" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-9" edge="1" parent="1" source="T2pYXhFmpw9Lz7_7Xv7j-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;defaultLabelBackgroundColor=page;labelPadding=0 4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;flowAnimation=0;dashed=1;dashPattern=8 8;strokeColor=light-dark(#000000,#FF9164);" target="_oWIY6VmZkqnpJ4aqjik-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-10" connectable="0" parent="_oWIY6VmZkqnpJ4aqjik-9" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="I10 - AMQP 0-9-1 (RabbitMQ) - Asíncrona" vertex="1">
+          <mxGeometry relative="1" x="-0.1482" y="3" as="geometry">
+            <mxPoint x="11" y="-43" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-11" edge="1" parent="1" source="_oWIY6VmZkqnpJ4aqjik-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;defaultLabelBackgroundColor=page;labelPadding=0 4;exitX=1;exitY=0.75;exitDx=0;exitDy=0;strokeColor=light-dark(#000000,#009900);startArrow=classic;startFill=1;" target="_oWIY6VmZkqnpJ4aqjik-2">
+          <mxGeometry relative="1" x="0.6216" as="geometry">
+            <mxPoint x="390" y="440" as="sourcePoint" />
+            <mxPoint x="510" y="505" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-12" connectable="0" parent="_oWIY6VmZkqnpJ4aqjik-11" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="I11 - gRPC (HTTP/2 + Protobuf) - Síncrona por lote" vertex="1">
+          <mxGeometry relative="1" x="0.4919" as="geometry">
+            <mxPoint x="40" y="6" as="offset" />
+          </mxGeometry>
         </mxCell>
         <mxCell id="T2pYXhFmpw9Lz7_7Xv7j-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fa6800;fontColor=light-dark(#000000,#000000);strokeColor=#C73500;" value="RabbitMQ - AMQP, colas normales y alertas" vertex="1">
-          <mxGeometry height="60" width="120" x="268" y="257.5" as="geometry" />
+          <mxGeometry height="60" width="120" x="424" y="280" as="geometry" />
         </mxCell>
         <mxCell id="T2pYXhFmpw9Lz7_7Xv7j-10" edge="1" parent="1" source="T2pYXhFmpw9Lz7_7Xv7j-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;strokeColor=light-dark(#000000,#808080);startArrow=classic;startFill=1;" target="T2pYXhFmpw9Lz7_7Xv7j-4">
           <mxGeometry relative="1" as="geometry" />
@@ -48,16 +80,39 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="T2pYXhFmpw9Lz7_7Xv7j-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" value="&lt;div&gt;Leyenda de tipos de comunicacion&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Color&lt;span style=&quot;white-space:pre&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp;Comunicación&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Azul&lt;span style=&quot;white-space:pre&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;HTTPS/REST&lt;/div&gt;&lt;div&gt;Gris&lt;span style=&quot;white-space:pre&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;Acceso a base de datos&lt;/div&gt;&lt;div&gt;Verde&lt;span style=&quot;white-space:pre&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp;RPC mediante gRPC&lt;/div&gt;&lt;div&gt;Naranja&lt;span style=&quot;white-space:pre&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp;Mensajería asíncrona mediante RabbitMQ&lt;/div&gt;&lt;div&gt;Rojo&lt;span style=&quot;white-space:pre&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;Sockets TCP / WebSocket&lt;/div&gt;" vertex="1">
-          <mxGeometry height="145" width="290" x="510" y="280" as="geometry" />
+          <mxGeometry height="145" width="290" x="590" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-13" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;defaultLabelBackgroundColor=page;labelPadding=0 4;exitX=1;exitY=0;exitDx=0;exitDy=0;dashed=1;dashPattern=8 8;strokeColor=light-dark(#000000,#FF9164);" target="T2pYXhFmpw9Lz7_7Xv7j-5">
+          <mxGeometry relative="1" x="-0.1176" as="geometry">
+            <Array as="points">
+              <mxPoint x="330" y="390" />
+              <mxPoint x="330" y="310" />
+            </Array>
+            <mxPoint x="340" y="390" as="sourcePoint" />
+            <mxPoint x="400" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-14" connectable="0" parent="_oWIY6VmZkqnpJ4aqjik-13" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="I12 - AMQP 0-9-1 (RabbitMQ) - Asíncrona" vertex="1">
+          <mxGeometry relative="1" x="-0.3059" as="geometry">
+            <mxPoint x="-20" y="-11" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-15" edge="1" parent="1" source="_oWIY6VmZkqnpJ4aqjik-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;startArrow=classic;startFill=1;strokeColor=light-dark(#000000,#808080);" target="_oWIY6VmZkqnpJ4aqjik-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-16" connectable="0" parent="_oWIY6VmZkqnpJ4aqjik-15" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="I18 - PostgreSQL / TCP - Síncrona" vertex="1">
+          <mxGeometry relative="1" x="-0.0067" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
         </mxCell>
         <mxCell id="_oWIY6VmZkqnpJ4aqjik-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="Servicio de Muro - arma el timeline (proyección y caché)" vertex="1">
-          <mxGeometry height="60" width="120" x="80" y="260" as="geometry" />
+          <mxGeometry height="60" width="120" x="230" y="380" as="geometry" />
         </mxCell>
-        <mxCell id="_oWIY6VmZkqnpJ4aqjik-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="Servicio de seguidores - quién sigue a quién" vertex="1">
-          <mxGeometry height="60" width="120" x="268" y="470" as="geometry" />
+        <mxCell id="_oWIY6VmZkqnpJ4aqjik-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="Servicio de Seguidores - quién sigue a quién" vertex="1">
+          <mxGeometry height="60" width="120" x="410" y="490" as="geometry" />
         </mxCell>
         <mxCell id="_oWIY6VmZkqnpJ4aqjik-3" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#647687;fontColor=#ffffff;strokeColor=#314354;" value="BD del muro - PostgreSQL (proyección y eventos procesados)" vertex="1">
-          <mxGeometry height="110" width="80" x="460" y="445" as="geometry" />
+          <mxGeometry height="110" width="80" x="250" y="500" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
