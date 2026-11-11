@@ -1,0 +1,186 @@
+\documentclass[12pt,a4paper]{article}
+
+% ==========================================================
+% GA-TL-02 | Vecindario | Archivo único compartido del equipo
+% Compilar: pdflatex -> biber -> pdflatex -> pdflatex
+% ==========================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{mathptmx} % Tipografía serif similar a Times
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{array}
+\usepackage{csquotes}
+\usepackage{xurl}
+\usepackage{hyperref}
+\hypersetup{hidelinks,pdftitle={Vecindario - Modelado de comunicación entre procesos distribuidos}}
+\usepackage[backend=biber,style=ieee,sorting=none,doi=true,isbn=true,url=true]{biblatex}
+\addbibresource{referencias.bib}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\renewcommand{\arraystretch}{1.15}
+\newcommand{\pendiente}[1]{\textit{[Pendiente: #1]}}
+
+\begin{document}
+
+% ----------------------------------------------------------
+% IDENTIFICACIÓN (sustituir campos antes de la entrega)
+% ----------------------------------------------------------
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+\centering
+{\large\bfseries UNIVERSIDAD TÉCNICA ESTATAL DE QUEVEDO\par}
+\vspace{0.4cm}
+{\large Facultad de Ciencias de la Computación\par}
+{\large Carrera de Software\par}
+\vspace{1.5cm}
+{\Large\bfseries Modelado de comunicación entre procesos distribuidos\par}
+\vspace{0.4cm}
+{\large Escenario 3: Red social ``Vecindario''\par}
+\vspace{1.2cm}
+{\large\bfseries GA-TL-02 -- FORM\par}
+{\large Asignatura: Aplicaciones Distribuidas (ISR-701)\par}
+\vspace{1cm}
+\begin{tabular}{ll}
+Docente: & Gleiston Cicerón Guerrero Ulloa \\
+Grupo: CGMZ \\
+Calderon Saltos Joseph Alexander \\
+Garcia Sangoquiza Roger Steven \\
+Mera Jumbo Allison Michelle \\
+Zambrano Parraga Luis Mario \\
+Nivel/paralelo: & Séptimo / A \\
+Fecha: & Noviembre de 2026 \\
+\end{tabular}
+\vfill
+{\large Quevedo -- Ecuador\par}
+\end{titlepage}
+\hypersetup{pageanchor=true}
+
+\tableofcontents
+\newpage
+
+% ----------------------------------------------------------
+% 1. ESCENARIO
+% ----------------------------------------------------------
+\section{Introducción y alcance}
+Vecindario es el escenario ficticio de una red social para comunidades barriales de Ecuador. El equipo debe modelar cómo intercambian mensajes sus procesos al crear publicaciones, distribuir avisos, conversar en tiempo real, mostrar la presencia de usuarios y atender denuncias. Los requisitos y las situaciones de fallo provienen del Anexo A entregado por el docente; no son mediciones realizadas por el equipo.
+
+Se propone separar las solicitudes que necesitan una respuesta inmediata de la distribución asíncrona de eventos. Esa distinción forma parte del diseño de servicios distribuidos y requiere justificar sus compromisos de acoplamiento, latencia y fiabilidad \cite{newman2021,kleppmann2017}.
+
+\textbf{Alcance de este documento.} Presentar el diagrama de comunicación, describir las interacciones, justificar las tecnologías elegidas y registrar la exposición. Los valores de rendimiento del enunciado son objetivos de diseño; no deben presentarse como resultados comprobados sin ensayos.
+
+\section{Actores y componentes}
+\textbf{Actores:} usuario, negocio local y moderador. \textbf{Sistema externo:} almacenamiento de imágenes.
+
+Los siete procesos mínimos del escenario son: cliente (web o móvil), Publicaciones, Seguidores, Muro, Mensajería directa con presencia en línea, Moderación y Notificaciones. La propuesta incorpora PostgreSQL y RabbitMQ como componentes de infraestructura para persistencia y entrega de eventos. La separación entre procesos debe mantenerse visible en el diagrama editable.
+
+\section{Diagrama general de comunicación}
+\pendiente{insertar imagen del diagrama final exportado, explicar símbolos y frontera del sistema. No incluir imagen hasta que todos terminen su parte.}
+
+% ----------------------------------------------------------
+% 2. INTERACCIONES: I01, I02, I08, I09 son un avance real.
+%    Las demás se integrarán en orden acordado por el equipo.
+% ----------------------------------------------------------
+\section{Matriz de interacciones}
+\begin{table}[H]
+\centering
+\small
+\caption{Interacciones incorporadas hasta este avance (matriz parcial).}
+\label{tab:interacciones}
+\begin{tabularx}{\textwidth}{@{}p{0.9cm}X p{2.7cm}X p{1.8cm}@{}}
+\toprule
+ID & Origen $\rightarrow$ destino & Tipo de comunicación & Protocolo / tecnología & Sincronía \\
+\midrule
+I01 & Cliente $\rightarrow$ Publicaciones & Petición / respuesta REST & HTTPS; JSON; API REST & Síncrona \\
+I02 & Cliente $\rightarrow$ almacenamiento externo & Transferencia de archivo & HTTPS PUT; URL prefirmada & Síncrona \\
+I08 & Publicaciones $\leftrightarrow$ PostgreSQL & Cliente / base de datos & TCP; protocolo PostgreSQL; controlador de BD & Síncrona \\
+I09 & Publicaciones $\rightarrow$ RabbitMQ & Mensajería asíncrona & AMQP 0-9-1; RabbitMQ & Asíncrona \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\normalsize
+\pendiente{ampliar la tabla con las interacciones I03--I07 e I10--I18, una vez revisadas por los otros integrantes; agregar los datos enviados y recibidos para cada fila.}
+
+% ----------------------------------------------------------
+% 3. CADA INTEGRANTE COMPLETA SU SUBSECCIÓN EN ESTE ARCHIVO
+% ----------------------------------------------------------
+\section{Justificación técnica por componente}
+
+\subsection{Publicaciones e imágenes (integrante 1)}
+\textbf{I01.} \pendiente{describir los datos enviados al crear/editar avisos, respuesta y manejo de errores.}
+
+\textbf{I02.} \pendiente{explicar la carga directa de imágenes y el uso de una URL prefirmada; fundamentar con fuente técnica adecuada.}
+
+\textbf{I08.} El modelo considera una transacción para registrar el aviso y un evento pendiente en la tabla \emph{outbox}; la atomicidad transaccional de PostgreSQL permite confirmar los cambios conjuntamente \cite{postgresql18transacciones}. \pendiente{explicar el esquema concreto acordado por el equipo y cuándo se confirma la operación.}
+
+\textbf{I09.} El despachador de eventos publicará mensajes en RabbitMQ. La confirmación del editor (\emph{publisher confirm}) permite conocer si el broker aceptó la publicación; deben contemplarse reintentos y consumidores idempotentes \cite{rabbitmqConfirms}. \pendiente{indicar contenido de post.created/security.alert, enrutamiento y alternativa descartada.}
+
+\subsection{Muro y seguidores (integrante 2)}
+\pendiente{explicar interacciones asignadas, RPC con gRPC, distribución de avisos normales y alertas, R3, R4 y F2. Usar fuentes y decisiones verificables \cite{grpcConceptos}.}
+
+\subsection{Mensajería directa (integrante 3)}
+\pendiente{explicar sockets, WebSocket sobre TCP si se mantiene esa elección, orden de mensajes, reconexiones, R2, R6, F1 y F3 \cite{rfc6455}.}
+
+\subsection{Moderación y notificaciones (integrante 4)}
+\pendiente{explicar denuncias, ocultamiento del muro, procesamiento de notificaciones, R5 y relación con F2.}
+
+% ----------------------------------------------------------
+% 4. COBERTURA DE REQUISITOS Y FALLOS
+% ----------------------------------------------------------
+\clearpage
+\section{Requisitos del escenario y decisiones de diseño}
+\begin{longtable}{@{}p{1cm}p{6cm}p{7cm}@{}}
+\toprule
+ID & Requisito del Anexo A & Evidencia/decisión en el diseño \\
+\midrule
+\endhead
+R1 & 200\,000 usuarios; hasta 40\,000 concurrentes & \pendiente{asignar y justificar} \\
+R2 & Mensajes directos en menos de 500 ms y en orden & \pendiente{asignar y justificar} \\
+R3 & Muro normal hasta 5 s; alerta en menos de 1 s & \pendiente{asignar y justificar} \\
+R4 & Publicación a 30\,000 seguidores sin degradar el resto & \pendiente{asignar y justificar} \\
+R5 & Tres denuncias; ocultar en menos de 1 minuto & \pendiente{asignar y justificar} \\
+R6 & Disponibilidad de mensajería: 99,5\,\% & \pendiente{asignar y justificar} \\
+\bottomrule
+\end{longtable}
+
+\section{Situaciones de fallo}
+\begin{description}
+\item[F1: destinatario desconectado.] \pendiente{indicar persistencia, confirmaciones y entrega posterior.}
+\item[F2: falla el servicio de muro.] \pendiente{explicar retención de eventos y recuperación de distribución.}
+\item[F3: reinicio de mensajería.] \pendiente{explicar reconexión, deduplicación y recuperación del último mensaje.}
+\end{description}
+
+\section{Alternativas y limitaciones del diseño}
+\pendiente{comparar decisiones de sockets, RPC, mensajería y persistencia con alternativas razonables, sin afirmar que el sistema cumple métricas no medidas.}
+
+% ----------------------------------------------------------
+% 5. NOTAS REALES DE LA EXPOSICIÓN
+% ----------------------------------------------------------
+\section{Notas de la presentación y preguntas críticas}
+\textbf{Distribución de la exposición (5 minutos):} \pendiente{agregar orden y tiempos de los cuatro integrantes.}
+
+\textbf{Preguntas recibidas y respuestas del equipo:} \pendiente{registrar después de la exposición; no inventar preguntas ni respuestas.}
+
+\textbf{Preguntas formuladas a otros equipos:} \pendiente{registrar las preguntas efectivamente realizadas.}
+
+\section{Conclusiones}
+\pendiente{redactar después de revisar el diagrama completo, con decisiones concretas y sus límites.}
+
+% ----------------------------------------------------------
+% 6. DECLARACIÓN DE USO DE IA, SEGÚN ENCUADRE 6.1
+% ----------------------------------------------------------
+\section{Declaración de uso de inteligencia artificial}
+En el desarrollo de este trabajo se utilizó \textbf{ChatGPT (OpenAI, GPT-6)} como herramienta de apoyo para interpretar la consigna, organizar la estructura del documento en \LaTeX{}.
+
+\textbf{Revisión y verificación por el equipo:} \pendiente{registrar las verificaciones REALMENTE realizadas: comparación con el Anexo A, consulta de fuentes originales, revisión del archivo .drawio, comprobación de citas y compilación de LaTeX. Indicar quién las hizo.}
+
+\textbf{Responsabilidad del contenido:} las decisiones finales, las modificaciones del diagrama, las citas incluidas y la defensa de la arquitectura deben ser comprobadas y asumidas por los integrantes. Esta declaración no sustituye la autoría ni la verificación académica.
+
+\printbibliography[heading=bibintoc,title={Referencias}]
+\end{document}
