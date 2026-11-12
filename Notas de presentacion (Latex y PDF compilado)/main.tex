@@ -697,7 +697,14 @@ haber actualizado ya todas las consultas del Muro.
 
 \section{Requisitos del escenario y decisiones de diseño}
 
-\begin{longtable}{@{}p{1cm}p{6cm}p{7cm}@{}}
+La siguiente tabla relaciona cada requisito del Anexo A con las interacciones
+del diagrama y las decisiones de diseño que buscan atenderlo. Se trata de
+medidas propuestas: ninguna de las cifras del enunciado ha sido comprobada
+mediante pruebas, por lo que deben entenderse como objetivos de diseño.
+
+\begingroup
+\small
+\begin{longtable}{@{}p{0.9cm}p{4cm}p{9.6cm}@{}}
 
 \toprule
 ID & Requisito del Anexo A & Evidencia/decisión en el diseño \\
@@ -707,31 +714,68 @@ ID & Requisito del Anexo A & Evidencia/decisión en el diseño \\
 
 R1 &
 200\,000 usuarios; hasta 40\,000 concurrentes &
-\pendiente{asignar y justificar} \\
+Solo los usuarios conectados mantienen una conexión WebSocket (I04). La
+consulta del muro lee una proyección ya construida (I03, I18), sin recalcularla
+en cada petición, y la distribución de avisos se realiza de forma asíncrona
+mediante RabbitMQ (I09, I10, I12), de modo que no bloquea a los demás
+servicios. Se propone ejecutar varias instancias de Mensajería y de la API
+detrás de un balanceador, con presencia de usuarios que expire por tiempo
+(TTL); estos elementos no aparecen aún en el diagrama. La capacidad para
+40\,000 conexiones simultáneas requiere pruebas de carga. \\
 
 R2 &
 Mensajes directos en menos de 500 ms y en orden &
-\pendiente{asignar y justificar} \\
+La conexión WebSocket permanece abierta (I04), por lo que el servidor puede
+entregar el mensaje sin esperar una nueva petición
+\cite{gangadevi2025chat,diaz2026protocols}. Cada mensaje se guarda en
+PostgreSQL (I14) con un identificador único y un número de secuencia asignado
+de forma atómica por conversación; el orden lo define el servidor al aceptar
+el mensaje. El ACK de aplicación se envía solo después de guardarlo. El tiempo
+debe medirse desde el envío hasta la recepción por un destinatario conectado. \\
 
 R3 &
 Muro normal hasta 5 s; alerta en menos de 1 s &
-\pendiente{asignar y justificar} \\
+Se separan las rutas \texttt{feed.normal} y \texttt{feed.alert}, con
+consumidores dedicados (I09, I10), para que un lote de avisos comunes no
+retrase una alerta. El Muro actualiza su proyección (I18) antes de publicar
+\texttt{feed.ready} (I12), y Mensajería avisa a los clientes conectados
+mediante I13 e I04. Los plazos de 5 s y 1 s no están comprobados y deben
+medirse desde la publicación hasta que el aviso aparece en el muro. \\
 
 R4 &
 Publicación a 30\,000 seguidores sin degradar el resto &
-\pendiente{asignar y justificar} \\
+El Muro consulta a Seguidores mediante gRPC paginado (I11), con
+\texttt{pageToken} y \texttt{pageSize}, y procesa los seguidores por lotes en
+lugar de recibir una lista completa en un solo mensaje. La distribución es
+asíncrona (I09, I10), con consumidores que pueden escalarse y que reconocen
+eventos repetidos mediante \texttt{eventId} (I18). Se debe verificar mediante
+pruebas que el servicio no se degrade para el resto de los usuarios. \\
 
 R5 &
 Tres denuncias; ocultar en menos de 1 minuto &
-\pendiente{asignar y justificar} \\
+La denuncia llega por REST (I05) y se guarda con la restricción
+\texttt{UNIQUE(post\_id, reporter\_id)}, de modo que cada persona cuenta una
+sola vez; el umbral de tres denuncias se evalúa en una transacción (I06).
+Moderación solicita a Publicaciones \texttt{HidePost} mediante gRPC con un
+\texttt{requestId} idempotente (I07). El evento \texttt{post.hidden} se
+registra con \textit{outbox} (I08) y se publica en RabbitMQ (I09)
+\cite{schwarz2025outbox}; el Muro lo consume (I10) y actualiza su proyección
+(I18). El plazo debe medirse desde la tercera denuncia hasta que el aviso
+deja de aparecer en el muro. \\
 
 R6 &
 Disponibilidad de mensajería: 99,5\,\% &
-\pendiente{asignar y justificar} \\
+Las conversaciones se conservan en PostgreSQL (I14) y los clientes pueden
+reconectarse y recuperar mensajes con \texttt{resume(lastSeq)}. Como el muro
+se alimenta por RabbitMQ con colas durables, una caída del Muro no debería
+detener el chat, lo que coincide con que el enunciado permite degradar el muro
+antes que la mensajería. Se proponen réplicas y monitoreo del servicio. Estas
+medidas no garantizan la disponibilidad: debe registrarse el tiempo operativo
+real durante un periodo de prueba. \\
 
 \bottomrule
 \end{longtable}
-
+\endgroup
 % ==========================================================
 % 6. SITUACIONES DE FALLO
 % ==========================================================
@@ -918,11 +962,7 @@ y mensajería asíncrona para distribuir eventos. Estas decisiones
 también tienen sus dificultades: mantener conexiones activas,
 administrar las colas y controlar los mensajes duplicados.
 
-El diseño todavía debe comprobarse mediante pruebas. Aunque se
-plantearon mecanismos de recuperación, falta medir los tiempos
-de entrega, la disponibilidad y el comportamiento del sistema
-bajo carga. Por eso, las tecnologías seleccionadas no garantizan
-por sí solas el cumplimiento de los requisitos del escenario.
+
 
 
 % ==========================================================
