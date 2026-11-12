@@ -497,23 +497,189 @@ Disponibilidad de mensajería: 99,5\,\% &
 \begin{description}
 
 \item[F1: destinatario desconectado.]
-\pendiente{indicar persistencia, confirmaciones y entrega posterior.}
 
-\item[F2: falla el servicio de muro.]
-\pendiente{explicar retención de eventos y recuperación de distribución.}
+Si una persona envía un mensaje a alguien que está desconectado,
+Mensajería lo guarda en PostgreSQL antes de confirmar su registro.
+El mensaje no depende de que el destinatario mantenga abierta una
+conexión WebSocket.
 
-\item[F3: reinicio de mensajería.]
-\pendiente{explicar reconexión, deduplicación y recuperación del último mensaje.}
+También se plantea publicar \texttt{dm.pending} en RabbitMQ para
+gestionar la notificación pendiente. El patrón \textit{outbox}
+permite registrar el evento junto con el mensaje y publicarlo
+después, incluso si ocurre una interrupción entre ambas
+operaciones \cite{gupta2025outbox}.
+
+Cuando el destinatario vuelve a conectarse, puede enviar
+\texttt{resume(lastSeq)} para recuperar los mensajes posteriores
+al último que conoce. Así, la entrega pendiente se resuelve
+consultando el historial almacenado.
+
+\item[F2: falla el servicio de Muro.]
+
+Si el Muro deja de funcionar mientras un negocio publica un
+aviso, Publicaciones puede guardar el aviso y su evento pendiente
+en PostgreSQL. Después, un despachador lo publica en RabbitMQ,
+sin depender de que el Muro esté disponible en ese momento.
+
+Para conservar los eventos durante la interrupción se plantean
+colas durables y mensajes persistentes. Al recuperarse, el Muro
+retoma el consumo y actualiza su proyección. El ACK manual se
+envía después de guardar el cambio; si un evento se entrega
+nuevamente, su \texttt{eventId} permite reconocerlo y evitar
+que se aplique dos veces.
+
+Este caso muestra por qué es necesario controlar los eventos
+repetidos y la consistencia entre servicios que procesan
+información de forma asíncrona \cite{bacao2026consistency}.
+
+\item[F3: reinicio de Mensajería.]
+
+Cuando Mensajería se reinicia, las conexiones WebSocket activas
+se interrumpen. Los clientes deben establecer una nueva conexión
+para continuar enviando y recibiendo mensajes.
+
+Como las conversaciones se guardan en PostgreSQL, el servicio
+puede consultar el historial después de recuperarse. Cada cliente
+indica su última secuencia conocida mediante
+\texttt{resume(lastSeq)}, y Mensajería devuelve los mensajes
+que faltan.
+
+Los identificadores únicos ayudan a reconocer mensajes
+reenviados durante la reconexión. Esta recuperación permite
+continuar las conversaciones, aunque no evita la interrupción
+momentánea del servicio ni demuestra por sí sola el cumplimiento
+de la disponibilidad exigida.
 
 \end{description}
-
 % ==========================================================
 % 7. ALTERNATIVAS
 % ==========================================================
 
+
 \section{Alternativas y limitaciones del diseño}
 
-\pendiente{comparar decisiones de sockets, RPC, mensajería y persistencia con alternativas razonables, sin afirmar que el sistema cumple métricas no medidas.}
+Para Vecindario se eligieron distintas tecnologías según el tipo de
+comunicación. Consultar el Muro no requiere lo mismo que enviar un
+mensaje privado o distribuir una alerta. Por eso se compararon las
+opciones utilizadas en el diagrama con otras que podrían resolver
+las mismas operaciones.
+
+La comparación considera cinco aspectos: comunicación en tiempo
+real, llamadas entre servicios, distribución de eventos,
+almacenamiento y consistencia. Las referencias sirven para
+examinar las diferencias entre tecnologías, no para afirmar
+que Vecindario ya alcanzó un rendimiento determinado.
+
+\begin{longtable}{@{}p{2.1cm}p{2.5cm}p{2.8cm}p{6.4cm}@{}}
+
+\caption{Comparación de tecnologías y alternativas para Vecindario}
+\label{tab:alternativas} \\
+
+\toprule
+Aspecto & \shortstack[l]{Elección del\\equipo} & Alternativa & Comparación y decisión \\
+\midrule
+\endfirsthead
+
+\toprule
+Aspecto & Elección del equipo & Alternativa &
+Comparación y decisión \\
+\midrule
+\endhead
+
+Sockets y
+tiempo real &
+WebSocket seguro (WSS) con \texttt{ws} &
+\textit{Long polling}, SSE y Socket.IO &
+WebSocket permite enviar y recibir información por una
+misma conexión. SSE se orienta al envío de eventos del
+servidor al cliente, mientras que \textit{long polling}
+requiere nuevas solicitudes. Se mantiene WSS para el
+chat y la presencia. La biblioteca \texttt{ws} es una
+opción más ligera que Socket.IO, aunque exige resolver
+parte de la reconexión y recuperación en la aplicación
+\cite{gracia2024realtime,fernando2025websocket}. \\
+
+\midrule
+
+RPC entre
+servicios &
+gRPC con HTTP/2
+y Protocol Buffers &
+API REST con
+HTTPS y JSON &
+REST facilita las solicitudes habituales del cliente.
+Para consultar seguidores en I11 se eligió gRPC por
+su contrato definido y la transmisión de datos
+binarios. REST sería una alternativa válida, pero
+no ofrece el mismo contrato tipado de forma nativa.
+Las diferencias de rendimiento dependen de las
+operaciones y del entorno evaluado
+\cite{kaminski2023protocols,kazanavicius2023communication}. \\
+
+\midrule
+
+Mensajería
+asíncrona &
+RabbitMQ con
+AMQP 0-9-1 &
+Apache Kafka &
+RabbitMQ permite trabajar con colas, confirmaciones
+y consumidores separados. Kafka ofrece un modelo
+basado en registros de eventos retenidos, útil
+cuando se necesita reproducirlos. Se eligió
+RabbitMQ para la distribución y las notificaciones;
+la comparación disponible muestra ventajas
+distintas según la latencia y el volumen procesado
+\cite{maharjan2023queues}. \\
+
+\midrule
+
+Persistencia &
+PostgreSQL &
+MongoDB &
+PostgreSQL permite guardar mensajes, avisos y
+registros relacionados mediante transacciones.
+MongoDB ofrece un modelo documental que puede
+resultar conveniente para información con otra
+estructura. Las pruebas comparativas no muestran
+un ganador para todas las operaciones. En Vecindario
+se mantiene PostgreSQL por las relaciones y
+transacciones previstas en el diseño
+\cite{olszak2025databases}. \\
+
+\midrule
+
+Consistencia
+de eventos &
+Patrón
+\textit{outbox} &
+Guardar en la BD
+y publicar directamente &
+Publicar inmediatamente después de guardar es
+más sencillo, pero una caída entre ambas acciones
+puede impedir el envío del evento. El
+\textit{outbox} registra el evento pendiente
+dentro de la transacción local y permite
+publicarlo después. A cambio, necesita un
+despachador, reintentos y control de duplicados
+\cite{gupta2025outbox,bacao2026consistency}. \\
+
+\bottomrule
+\end{longtable}
+
+La comparación muestra que cada tecnología responde a una
+necesidad distinta. Para Vecindario se eligieron conexiones
+persistentes para el chat, llamadas síncronas para las consultas
+y mensajería asíncrona para distribuir eventos. Estas decisiones
+también tienen sus dificultades: mantener conexiones activas,
+administrar las colas y controlar los mensajes duplicados.
+
+El diseño todavía debe comprobarse mediante pruebas. Aunque se
+plantearon mecanismos de recuperación, falta medir los tiempos
+de entrega, la disponibilidad y el comportamiento del sistema
+bajo carga. Por eso, las tecnologías seleccionadas no garantizan
+por sí solas el cumplimiento de los requisitos del escenario.
+
 
 % ==========================================================
 % 8. NOTAS DE PRESENTACIÓN
