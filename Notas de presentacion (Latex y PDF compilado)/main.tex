@@ -994,13 +994,29 @@ confirmación (\textit{ACK}) se emite solo después de persistir el cambio, de
 modo que un fallo a mitad del procesamiento provoca una reentrega y no una
 pérdida.
 
-\textbf{Pregunta 2:} \pendiente{pregunta simulada del integrante correspondiente.}
 
-\textbf{Respuesta:} \pendiente{respuesta del equipo.}
+\textbf{Pregunta 2:} ¿Qué pasa si Mensajería se reinicia mientras
+dos usuarios conversan? ¿Cómo se conserva el orden de los mensajes?
 
-\textbf{Pregunta 3:} \pendiente{pregunta simulada del integrante correspondiente.}
+\textbf{Respuesta:} Los mensajes aceptados se guardan en PostgreSQL
+(I14) con una secuencia por conversación. Si el servicio se reinicia,
+el cliente se reconecta por WebSocket (I04) y utiliza
+\texttt{resume(lastSeq)} para recuperar los mensajes faltantes
+en orden. Esto permite continuar la conversación, aunque
+no evita la interrupción momentánea.
 
-\textbf{Respuesta:} \pendiente{respuesta del equipo.}
+\textbf{Pregunta 3:} ¿Cómo evitan que una persona denuncie varias
+veces una publicación? ¿Qué ocurre si el Muro deja de funcionar?
+
+\textbf{Respuesta:} PostgreSQL impide contar dos veces una denuncia
+del mismo usuario mediante
+\texttt{UNIQUE(post\_id, reporter\_id)} (I06).
+Al llegar a tres denunciantes distintos, Moderación solicita
+el ocultamiento (I07). Si el Muro falla, el evento
+\texttt{post.hidden} queda pendiente de procesamiento
+hasta su recuperación, por lo que el plazo de R5 podría
+verse afectado.
+
 
 \textbf{Preguntas formuladas a otros equipos.}
 
@@ -1010,9 +1026,30 @@ No se registran preguntas formuladas a otros equipos, ya que no hubo exposición
 % 9. CONCLUSIONES
 % ==========================================================
 
+
 \section{Conclusiones}
 
-\pendiente{redactar después de revisar el diagrama completo, con decisiones concretas y sus límites.}
+Una de las decisiones más importantes fue evitar que el chat
+dependiera del funcionamiento del Muro. Los mensajes se
+almacenan en PostgreSQL y, si Mensajería se reinicia,
+el cliente puede recuperar los que faltan mediante
+\texttt{resume(lastSeq)}. Así, una desconexión no implica
+perder los mensajes que ya fueron guardados.
+
+En la distribución de avisos encontramos otra dificultad:
+un evento puede llegar repetido o quedar pendiente durante
+una caída. Por eso se plantearon RabbitMQ, el patrón
+\textit{outbox} y el control de duplicados. No basta con
+enviar un evento; también hay que comprobar que se procese
+correctamente.
+
+El diseño propone cómo responder a estos problemas, pero
+todavía no demuestra que se cumplan los tiempos exigidos.
+La entrega de mensajes en menos de 500 ms, el ocultamiento
+de publicaciones en un minuto y la disponibilidad del
+99,5\,\% necesitan pruebas para comprobarse.
+
+
 
 % ==========================================================
 % 10. DECLARACIÓN DE IA
