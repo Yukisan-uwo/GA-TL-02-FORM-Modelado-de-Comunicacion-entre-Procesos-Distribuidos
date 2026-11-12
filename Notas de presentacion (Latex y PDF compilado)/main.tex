@@ -156,6 +156,24 @@ Transferencia de archivo &
 HTTPS PUT; URL prefirmada &
 Síncrona \\
 
+I05 &
+Cliente $\leftrightarrow$ Moderación &
+Petición / respuesta REST &
+HTTPS sobre TCP/TLS; JSON; API REST &
+Síncrona \\
+
+I06 &
+Moderación $\leftrightarrow$ PostgreSQL de denuncias &
+Cliente / base de datos &
+TCP; protocolo PostgreSQL; controlador de BD &
+Síncrona \\
+
+I07 &
+Moderación $\leftrightarrow$ Publicaciones &
+RPC unaria &
+gRPC; HTTP/2 sobre TCP/TLS; Protocol Buffers &
+Síncrona \\
+
 I08 &
 Publicaciones $\leftrightarrow$ PostgreSQL &
 Cliente / base de datos &
@@ -168,13 +186,23 @@ Mensajería asíncrona &
 AMQP 0-9-1; RabbitMQ &
 Asíncrona \\
 
+I16 &
+RabbitMQ $\rightarrow$ Notificaciones &
+Mensajería asíncrona &
+AMQP 0-9-1 sobre TCP; RabbitMQ; ACK manual &
+Asíncrona \\
+
+I17 &
+Cliente $\leftrightarrow$ Notificaciones &
+Petición / respuesta REST &
+HTTPS sobre TCP/TLS; JSON; API REST &
+Síncrona \\
+
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \normalsize
-
-\pendiente{ampliar la tabla con I03--I07 e I10--I18; agregar los datos enviados y recibidos para cada interacción.}
 
 % ==========================================================
 % 4. JUSTIFICACIÓN TÉCNICA
@@ -441,9 +469,162 @@ el chat y RabbitMQ para los eventos entre servicios.
 % INTEGRANTE 4
 % ----------------------------------------------------------
 
-\subsection{Moderación y notificaciones (integrante 4)}
+\subsection{Moderación y notificaciones}
 
-\pendiente{explicar denuncias, ocultamiento del muro, procesamiento de notificaciones, R5 y relación con F2.}
+Esta parte comprende las interacciones I05, I06, I07, I16 e I17.
+Moderación registra las denuncias y solicita el ocultamiento de
+publicaciones. Notificaciones mantiene un buzón de avisos para
+los usuarios. Los mecanismos descritos son propuestas de diseño;
+todavía no representan funciones implementadas ni resultados
+comprobados.
+
+\paragraph{I05. Registro de denuncias desde el Cliente.}
+
+El Cliente envía a Moderación el identificador de la publicación
+(\texttt{postId}), el identificador del denunciante
+(\texttt{reporterId}) y el motivo. Se utiliza una API REST con
+JSON mediante HTTPS sobre TCP/TLS. El servidor debe comprobar
+la identidad del denunciante a partir de su sesión, sin confiar
+únicamente en el identificador recibido.
+
+La comunicación es síncrona porque el Cliente espera una
+confirmación del registro o un error. Esta respuesta permite
+informar al usuario si su denuncia fue aceptada, pero no significa
+que la publicación ya haya sido ocultada.
+
+\paragraph{I06. Almacenamiento y conteo de denuncias.}
+
+Moderación guarda las denuncias en PostgreSQL mediante su
+protocolo nativo sobre TCP. La comunicación es síncrona porque
+el servicio necesita conocer el resultado de la operación.
+
+Se propone la restricción
+\texttt{UNIQUE(post\_id, reporter\_id)} para que una persona
+cuente una sola vez al denunciar una misma publicación.
+El registro y el conteo deben coordinarse por publicación
+para evitar resultados incorrectos cuando llegan varias
+denuncias al mismo tiempo.
+
+Al alcanzar tres denunciantes distintos, se registra una
+solicitud de ocultamiento pendiente en la misma transacción
+local. Así, si Moderación se reinicia después de guardar
+la tercera denuncia, puede recuperar la solicitud y continuar
+su procesamiento.
+
+\paragraph{I07. Solicitud de ocultamiento mediante gRPC.}
+
+Después de confirmar la transacción, Moderación solicita a
+Publicaciones la operación
+\texttt{HidePost(postId, motivo, requestId)}. Se utiliza
+una llamada RPC unaria mediante gRPC, con Protocol Buffers
+sobre HTTP/2 y TCP/TLS. Es una comunicación síncrona porque
+Moderación espera el resultado de cada llamada.
+
+Se elige gRPC para definir claramente los datos de la solicitud
+y de la respuesta entre ambos servicios. Esto no implica
+que su uso garantice por sí solo el cumplimiento del tiempo
+exigido por el escenario.
+
+La llamada tendrá un tiempo de espera limitado. Si ocurre
+un fallo temporal, la solicitud permanece pendiente y puede
+reintentarse usando el mismo \texttt{requestId}. La operación
+debe ser idempotente: repetirla mantiene la publicación oculta,
+sin repetir sus efectos.
+
+Esta precaución es necesaria porque una respuesta podría
+perderse aunque Publicaciones haya ejecutado el ocultamiento.
+La solicitud pendiente se marca como completada cuando se
+confirma el resultado.
+
+\paragraph{Propagación del ocultamiento y requisito R5.}
+
+Publicaciones guarda el estado oculto del aviso y el evento
+\texttt{post.hidden} en una misma transacción mediante su
+tabla \textit{outbox} (I08). Después, el evento se publica
+en RabbitMQ (I09) y el Muro lo consume por una ruta de control
+separada (I10), actualizando su proyección y descartando
+copias antiguas de la caché (I18).
+
+Schwarz y colaboradores describen un caso real en el que
+los servicios guardan eventos en una tabla \textit{outbox}
+y otro componente los envía al intermediario de mensajería
+al menos una vez \cite{schwarz2025outbox}. Este caso respalda
+el uso del mecanismo para coordinar el almacenamiento
+con el envío posterior de eventos; los reintentos requieren
+controlar los posibles duplicados.
+
+El cambio en Publicaciones no aparece de manera instantánea
+en todos los servicios. Esta actualización progresiva supone
+consistencia eventual, un aspecto que debe considerarse
+al coordinar microservicios mediante eventos
+\cite{bacao2026consistency}.
+
+R5 exige ocultar el aviso en menos de un minuto después
+de alcanzar tres denuncias válidas de usuarios distintos.
+Para comprobarlo, se deberá medir desde el registro de
+la tercera denuncia hasta que la publicación deje de
+aparecer en las consultas del Muro. El diseño propone
+medidas para alcanzar esa meta, pero no garantiza el plazo
+durante una caída prolongada.
+
+\paragraph{I16. Recepción de eventos en Notificaciones.}
+
+Notificaciones recibe desde RabbitMQ los eventos
+\texttt{dm.pending}, que informan de mensajes pendientes,
+y \texttt{feed.ready}, que indican una actualización
+disponible del Muro. Se utiliza AMQP 0-9-1 sobre TCP.
+La comunicación es asíncrona porque el productor no espera
+a que Notificaciones termine de procesar cada aviso.
+
+Se propone una cola propia de Notificaciones, durable
+y con mensajes persistentes. Si Mensajería también necesita
+recibir \texttt{feed.ready}, tendrá otra cola enlazada
+al mismo evento, de modo que ambos servicios reciban
+su copia.
+
+Notificaciones guarda el aviso en su buzón y registra
+su \texttt{eventId} en una misma transacción local.
+Solo después envía el ACK manual a RabbitMQ.
+Si el servicio falla antes de confirmar el consumo,
+el evento puede reentregarse. El identificador permite
+reconocerlo y evitar avisos duplicados.
+
+\paragraph{I17. Consulta del buzón desde el Cliente.}
+
+El Cliente consulta su buzón mediante una API REST con
+JSON sobre HTTPS y TCP/TLS. La comunicación es síncrona:
+el Cliente espera la lista de notificaciones y sus estados
+de lectura. Se utiliza GET para consultar y una operación
+de escritura, como PATCH, para marcar una notificación
+como leída. El servicio debe comprobar que el usuario
+solo acceda a su propio buzón.
+
+Una notificación de mensaje pendiente no sustituye
+la entrega del chat. El mensaje original permanece
+almacenado en Mensajería y se recupera mediante su
+mecanismo de reconexión. Asimismo, el aviso activo
+a un cliente conectado se realiza mediante Mensajería
+por I13 e I04; la consulta del buzón no garantiza
+por sí sola la entrega inmediata de una alerta.
+
+\paragraph{Fallos, alternativa y limitaciones.}
+
+Si Notificaciones deja de funcionar, los eventos pendientes
+pueden conservarse en RabbitMQ y procesarse al recuperar
+el servicio. Los avisos ya confirmados deben permanecer
+en el almacenamiento duradero del buzón.
+
+Una alternativa sería llamar directamente a Notificaciones
+desde los servicios productores. Sin embargo, eso haría
+que cada llamada dependiera de su disponibilidad.
+RabbitMQ permite procesar los avisos por separado,
+a cambio de administrar las colas, los reintentos
+y los duplicados.
+
+Si falla el Muro, el evento de ocultamiento puede quedar
+pendiente hasta su recuperación. Por ello, confirmar
+el cambio en Publicaciones no debe confundirse con
+haber actualizado ya todas las consultas del Muro.
 
 % ==========================================================
 % 5. REQUISITOS DEL ESCENARIO
