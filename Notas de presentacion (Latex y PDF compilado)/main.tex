@@ -130,19 +130,30 @@ La separación entre procesos debe mantenerse visible en el diagrama editable.
 
 \section{Matriz de interacciones}
 
-\begin{table}[H]
-\centering
+\begingroup
 \small
 
-\caption{Interacciones incorporadas hasta este avance (matriz parcial).}
-\label{tab:interacciones}
+\begin{longtable}{@{}p{0.9cm}p{4.4cm}p{2.7cm}p{4.4cm}p{1.8cm}@{}}
 
-\begin{tabularx}{\textwidth}{@{}p{0.9cm}X p{2.7cm}X p{1.8cm}@{}}
+\caption{Matriz completa de interacciones.}
+\label{tab:interacciones} \\
 
 \toprule
 ID & Origen $\rightarrow$ destino & Tipo de comunicación & Protocolo / tecnología & Sincronía \\
 
 \midrule
+\endfirsthead
+
+\toprule
+ID & Origen $\rightarrow$ destino & Tipo de comunicación & Protocolo / tecnología & Sincronía \\
+
+\midrule
+\endhead
+
+\endfoot
+
+\bottomrule
+\endlastfoot
 
 I01 &
 Cliente $\rightarrow$ Publicaciones &
@@ -155,6 +166,18 @@ Cliente $\rightarrow$ almacenamiento externo &
 Transferencia de archivo &
 HTTPS PUT; URL prefirmada &
 Síncrona \\
+
+I03 &
+Cliente $\leftrightarrow$ Muro &
+Petición / respuesta REST &
+HTTPS; JSON; API REST &
+Síncrona \\
+
+I04 &
+Cliente $\leftrightarrow$ Mensajería &
+Sockets mediante WebSocket &
+WSS sobre TCP/TLS; biblioteca \texttt{ws}; ACK de aplicación &
+Asíncrona bidireccional \\
 
 I05 &
 Cliente $\leftrightarrow$ Moderación &
@@ -186,6 +209,42 @@ Mensajería asíncrona &
 AMQP 0-9-1; RabbitMQ &
 Asíncrona \\
 
+I10 &
+RabbitMQ $\rightarrow$ Muro &
+Mensajería asíncrona &
+AMQP 0-9-1 sobre TCP; RabbitMQ; ACK manual &
+Asíncrona \\
+
+I11 &
+Muro $\leftrightarrow$ Seguidores &
+RPC unaria paginada &
+gRPC; HTTP/2 sobre TCP/TLS; Protocol Buffers &
+Síncrona por lote \\
+
+I12 &
+Muro $\rightarrow$ RabbitMQ &
+Mensajería asíncrona &
+AMQP 0-9-1 sobre TCP; RabbitMQ; outbox del Muro; confirmaciones de publicación &
+Asíncrona \\
+
+I13 &
+RabbitMQ $\rightarrow$ Mensajería &
+Mensajería asíncrona &
+AMQP 0-9-1 sobre TCP; RabbitMQ; ACK manual &
+Asíncrona \\
+
+I14 &
+Mensajería $\leftrightarrow$ PostgreSQL de mensajes &
+Cliente / base de datos &
+TCP; protocolo PostgreSQL; controlador de BD &
+Síncrona \\
+
+I15 &
+Mensajería $\rightarrow$ RabbitMQ &
+Mensajería asíncrona &
+AMQP 0-9-1 sobre TCP; RabbitMQ; outbox de Mensajería &
+Asíncrona \\
+
 I16 &
 RabbitMQ $\rightarrow$ Notificaciones &
 Mensajería asíncrona &
@@ -198,11 +257,15 @@ Petición / respuesta REST &
 HTTPS sobre TCP/TLS; JSON; API REST &
 Síncrona \\
 
-\bottomrule
-\end{tabularx}
-\end{table}
+I18 &
+Muro $\leftrightarrow$ PostgreSQL del Muro &
+Cliente / base de datos &
+TCP; protocolo PostgreSQL; controlador de BD &
+Síncrona \\
 
-\normalsize
+\end{longtable}
+
+\endgroup
 
 % ==========================================================
 % 4. JUSTIFICACIÓN TÉCNICA
