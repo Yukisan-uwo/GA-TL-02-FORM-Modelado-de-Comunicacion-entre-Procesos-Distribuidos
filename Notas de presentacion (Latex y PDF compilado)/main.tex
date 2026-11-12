@@ -926,22 +926,45 @@ por sí solas el cumplimiento de los requisitos del escenario.
 
 
 % ==========================================================
-% 8. NOTAS DE PRESENTACIÓN
+% 8. PREGUNTAS CRÍTICAS
 % ==========================================================
 
-\section{Notas de la presentación y preguntas críticas}
+\section{Preguntas críticas}
 
-\textbf{Distribución de la exposición (5 minutos):}
+Las preguntas y respuestas que se presentan a continuación son simuladas. La
+actividad GA-TL-02 no se realizó en clase, sino que fue asignada para
+desarrollarse de forma remota, por lo que no hubo exposición presencial ni
+intervención de otros equipos. En consecuencia, el equipo formuló estas
+preguntas por cuenta propia, a partir de los requisitos (R1--R6) y las
+situaciones de fallo (F1--F3) del enunciado, con el fin de anticipar los
+cuestionamientos técnicos más probables sobre el diseño y de preparar su
+defensa. Ninguna de ellas corresponde a una pregunta efectivamente recibida.
 
-\pendiente{agregar orden y tiempos de los cuatro integrantes.}
+\textbf{Pregunta 1:} ¿Qué ocurre si RabbitMQ reentrega un mensaje al servicio de
+Muro? ¿No se duplicarían los avisos en el muro?
 
-\textbf{Preguntas recibidas y respuestas del equipo:}
+\textbf{Respuesta:} RabbitMQ garantiza la entrega al menos una vez, no
+exactamente una vez, por lo que una reentrega es posible, por ejemplo si el
+Muro falla antes de confirmar el mensaje. Para evitar duplicados, el
+procesamiento se diseñó de forma idempotente: cada evento incluye un
+identificador (\texttt{eventId}) que el Muro registra en su base de datos
+PostgreSQL (interacción I18) junto con la proyección. Si el mismo evento llega
+de nuevo, el Muro detecta que ya fue procesado y lo descarta. Además, la
+confirmación (\textit{ACK}) se emite solo después de persistir el cambio, de
+modo que un fallo a mitad del procesamiento provoca una reentrega y no una
+pérdida.
 
-\pendiente{registrar después de la exposición; no inventar preguntas ni respuestas.}
+\textbf{Pregunta 2:} \pendiente{pregunta simulada del integrante correspondiente.}
 
-\textbf{Preguntas formuladas a otros equipos:}
+\textbf{Respuesta:} \pendiente{respuesta del equipo.}
 
-\pendiente{registrar las preguntas efectivamente realizadas.}
+\textbf{Pregunta 3:} \pendiente{pregunta simulada del integrante correspondiente.}
+
+\textbf{Respuesta:} \pendiente{respuesta del equipo.}
+
+\textbf{Preguntas formuladas a otros equipos.}
+
+No se registran preguntas formuladas a otros equipos, ya que no hubo exposición presencial. Al no existir presentaciones de los demás equipos durante la sesión, no se contó con la oportunidad de plantearles preguntas críticas.
 
 % ==========================================================
 % 9. CONCLUSIONES
